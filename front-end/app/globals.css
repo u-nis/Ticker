@@ -6,7 +6,7 @@
 @tailwind utilities;
 
 :root {
-  --background: #f9f9fb;
+  --background: #141617;
   --foreground: #171717;
   font-family: 'Roboto', sans-serif;
 }

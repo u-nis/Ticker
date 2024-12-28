@@ -7,6 +7,11 @@ export default function Home() {
       <WindowBox>
         <StockPriceBox />
       </WindowBox>
+      {/* Attribution Notice */}
+      <p style={{ color: 'white', fontSize: '12px', position: 'fixed', bottom: '10px' }}>
+        Charting powered by <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a>.
+      </p>
     </div>
+
   );
 }

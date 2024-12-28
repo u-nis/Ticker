@@ -1,15 +1,15 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { createChart, CrosshairMode, CandlestickData } from 'lightweight-charts';
+import { createChart, CrosshairMode, CandlestickData, IChartApi, ISeriesApi } from 'lightweight-charts';
 
 const StockPriceBox = () => {
-  const [symbol, setSymbol] = useState('');
+  const [symbol, setSymbol] = useState('AAPL'); // Default symbol is AAPL
   const [price, setPrice] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [chartData, setChartData] = useState<CandlestickData[]>([]);
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
-  const candlestickSeriesRef = useRef<ReturnType<typeof createChart>['addCandlestickSeries'] | null>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
 
   const fetchPrice = async () => {
     setError(null);
@@ -44,9 +44,10 @@ const StockPriceBox = () => {
 
   useEffect(() => {
     if (chartContainerRef.current) {
+      // Initialize the chart
       chartRef.current = createChart(chartContainerRef.current, {
         width: chartContainerRef.current.clientWidth,
-        height: 500,
+        height: chartContainerRef.current.clientHeight,
         layout: {
           textColor: 'white',
           background: { type: 'solid', color: '#141414' },
@@ -57,37 +58,43 @@ const StockPriceBox = () => {
         },
         grid: {
           vertLines: {
-            color: '#1f222e'
+            color: '#1f222e',
           },
           horzLines: {
-            color: '1f222e'
-          }
-        }
+            color: '#1f222e',
+          },
+        },
       });
 
+      // Add Candlestick Series
       candlestickSeriesRef.current = chartRef.current.addCandlestickSeries({
         upColor: '#26a69a',
         downColor: '#ef5350',
         borderVisible: false,
         wickUpColor: '#26a69a',
         wickDownColor: '#ef5350',
-        color: "blue"
       });
 
-      // Handle window resize
-      const handleResize = () => {
-        if (chartRef.current && chartContainerRef.current) {
-          chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
+      // Fetch the default stock (AAPL) data when the component mounts
+      fetchPrice();
+
+      // ResizeObserver to handle container size changes
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+          const { width, height } = entry.contentRect;
+          chartRef.current?.applyOptions({ width, height });
+          chartRef.current?.timeScale().fitContent();
         }
-      };
-      window.addEventListener('resize', handleResize);
+      });
+
+      resizeObserver.observe(chartContainerRef.current);
 
       return () => {
-        window.removeEventListener('resize', handleResize);
+        resizeObserver.disconnect();
         chartRef.current?.remove();
       };
     }
-  }, []);
+  }, []); // Empty dependency array ensures it runs only once
 
   useEffect(() => {
     if (candlestickSeriesRef.current && chartData.length > 0) {
@@ -104,43 +111,41 @@ const StockPriceBox = () => {
   }, [chartData]);
 
   return (
-    <div style={{ textAlign: 'left' }}>
-      <div>
+    <div style={{ width: '100%', height: '100%', }}>
+      {/* Input Field */}
+      <div style={{ position: 'fixed', top: '0px' }}>
         <input
           type="text"
           value={symbol}
           onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-          placeholder="Enter stock symbol"
+          placeholder="TICKER"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              fetchPrice();
+            }
+          }}
           style={{
-            width: '30%',
-            marginRight: '10px',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
+            marginLeft: '10px',
+            marginTop: '10px',
+            background: "#141414",
+            color: "white",
+            width: '60px',
           }}
         />
-        <button
-          onClick={fetchPrice}
-          style={{
-            cursor: 'pointer',
-            backgroundColor: '#0070f3',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-          }}
-        >
-          Get Price
-        </button>
       </div>
-      <div>
+
+      {/* Price and Error Messages */}
+      <div style={{ padding: '10px' }}>
         {price !== null && <p>Current Price: <strong>${price.toFixed(2)}</strong></p>}
         {error && <p style={{ color: 'red' }}>{error}</p>}
       </div>
-      <div ref={chartContainerRef} ></div>
-      {/* Attribution Notice */}
-      <p style={{ fontSize: '12px', marginTop: '10px' }}>
-        Charting powered by <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a>.
-      </p>
-    </div>
+
+      {/* Chart Container */}
+      <div
+        ref={chartContainerRef}
+        style={{ width: '100%', height: 'calc(100% - 60px)', position: 'absolute', top: '60px' }}
+      ></div>
+    </div >
   );
 };
 

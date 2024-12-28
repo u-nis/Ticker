@@ -1,5 +1,4 @@
 'use client';
-import { color } from 'chart.js/helpers';
 import { ReactNode } from 'react';
 import { Rnd } from 'react-rnd';
 
@@ -14,7 +13,7 @@ const WindowBox = ({ children, onClose }: WindowBoxProps) => {
             default={{
                 x: 100,
                 y: 100,
-                width: 600,
+                width: 650,
                 height: 500,
             }}
             minWidth={300}
@@ -22,7 +21,8 @@ const WindowBox = ({ children, onClose }: WindowBoxProps) => {
             bounds="window" // Restricts dragging within the browser window
             dragHandleClassName="window-header" // Draggable only by the header
             style={{
-                fontFamily: "roboto",
+                border: '1px solid #26a69a',
+                fontFamily: 'Roboto',
                 backgroundColor: '#111111',
                 display: 'flex',
                 flexDirection: 'column',
@@ -32,7 +32,7 @@ const WindowBox = ({ children, onClose }: WindowBoxProps) => {
         >
             {/* Window Header */}
             <div
-                className="window-header" // Class to make the header draggable
+                className="window-header bg-primary" // Class to make the header draggable
                 style={{
                     padding: '5px',
                     cursor: 'move', // Indicates draggable area
@@ -41,15 +41,15 @@ const WindowBox = ({ children, onClose }: WindowBoxProps) => {
                     alignItems: 'center',
                 }}
             >
-                <span
-                    style={{
-                        color: "#ffffff",
-                    }}>Stock Tracker</span>
                 <button
                     onClick={onClose}
                     style={{
+                        marginLeft: 'auto',
                         color: '#ffffff',
                         fontSize: '18px',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
                     }}
                 >
                     &times;
@@ -57,10 +57,10 @@ const WindowBox = ({ children, onClose }: WindowBoxProps) => {
             </div>
 
             {/* Window Content */}
-            <div style={{ padding: '20px', flex: 1, overflow: 'auto' }}>
+            <div style={{ flex: 1, overflow: 'auto' }}>
                 {children}
             </div>
-        </Rnd >
+        </Rnd>
     );
 };
 

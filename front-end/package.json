@@ -9,10 +9,19 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "chart.js": "^4.4.7",
+    "chartjs-adapter-date-fns": "^3.0.0",
+    "chartjs-chart-financial": "^0.2.1",
+    "d3": "^7.9.0",
+    "lightweight-charts": "^4.2.2",
     "next": "15.1.2",
+    "plotly.js": "^2.35.3",
     "plotly.js-dist": "^2.35.3",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-draggable": "^4.4.6",
+    "react-plotly.js": "^2.6.0",
+    "react-rnd": "^10.4.14"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

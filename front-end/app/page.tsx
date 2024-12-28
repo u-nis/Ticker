@@ -1,9 +1,12 @@
+import WindowBox from "@/components/WindowBox";
 import StockPriceBox from "@/components/StockPriceBox";
+
 export default function Home() {
   return (
-
-    <StockPriceBox />
-
-
+    <div>
+      <WindowBox>
+        <StockPriceBox />
+      </WindowBox>
+    </div>
   );
 }

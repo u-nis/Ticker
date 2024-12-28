@@ -1,162 +1,118 @@
 'use client';
-import { useState, useEffect } from 'react';
-import Plotly from 'plotly.js-dist';
+import { useState, useRef, useEffect } from 'react';
+import { createChart, CrosshairMode, CandlestickData } from 'lightweight-charts';
 
 const StockPriceBox = () => {
   const [symbol, setSymbol] = useState('');
-  const [price, setPrice] = useState<string | null>(null);
+  const [price, setPrice] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 100, y: 100 }); // Initial position
-  const [showWindow, setShowWindow] = useState(true);
-
-  // References to store initial positions during drag
-  const [dragStart, setDragStart] = useState({ mouseX: 0, mouseY: 0, windowX: 0, windowY: 0 });
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
-        const deltaX = e.clientX - dragStart.mouseX;
-        const deltaY = e.clientY - dragStart.mouseY;
-        setPosition({
-          x: dragStart.windowX + deltaX,
-          y: dragStart.windowY + deltaY,
-        });
-      }
-    };
-
-    const handleMouseUp = () => {
-      if (isDragging) {
-        setIsDragging(false);
-      }
-    };
-
-    // Attach the listeners to the document
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-
-    // Cleanup the listeners on unmount
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, dragStart]);
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    setIsDragging(true);
-    setDragStart({
-      mouseX: e.clientX,
-      mouseY: e.clientY,
-      windowX: position.x,
-      windowY: position.y,
-    });
-  };
+  const [chartData, setChartData] = useState<CandlestickData[]>([]);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
+  const candlestickSeriesRef = useRef<ReturnType<typeof createChart>['addCandlestickSeries'] | null>(null);
 
   const fetchPrice = async () => {
-    setError(null); // Reset errors
-    setPrice(null); // Reset price display
+    setError(null);
+    setPrice(null);
+    setChartData([]);
+
+    if (symbol.trim() === '') {
+      setError('Please enter a stock symbol.');
+      return;
+    }
 
     try {
       const response = await fetch(`http://127.0.0.1:8000/api/stock/${symbol}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch price');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch price');
       }
       const data = await response.json();
-      console.log(symbol);
-      console.log(data);
+      console.log(symbol, data);
 
-      // Render the graph if available
-      if (data.graph) {
-        const graphData = JSON.parse(data.graph);
-        // Remove the plot area and paper background
-        graphData.layout.plot_bgcolor = 'transparent';
-        graphData.layout.paper_bgcolor = 'transparent';
-
-        Plotly.newPlot('chart-container', graphData.data, graphData.layout, { displayModeBar: false });
+      if (data.price !== undefined && data.price !== null) {
+        setPrice(data.price);
       }
 
-      setPrice(data.price); // Assuming API returns `{ price: value }`
+      if (data.chartData) {
+        setChartData(data.chartData);
+      }
     } catch (err: any) {
       setError(err.message || 'An error occurred');
     }
   };
 
-  // If the window is closed, provide a button to reopen it
-  if (!showWindow) {
-    return (
-      <button
-        onClick={() => setShowWindow(true)}
-        style={{
-          padding: '10px 15px',
-          cursor: 'pointer',
-          backgroundColor: '#0070f3',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '5px',
-          position: 'fixed',
-          top: '20px',
-          left: '20px',
-        }}
-      >
-        Open Stock Price Checker
-      </button>
-    );
-  }
+  useEffect(() => {
+    if (chartContainerRef.current) {
+      chartRef.current = createChart(chartContainerRef.current, {
+        width: chartContainerRef.current.clientWidth,
+        height: 500,
+        layout: {
+          textColor: 'white',
+          background: { type: 'solid', color: '#141414' },
+          attributionLogo: false, // Disable the TradingView logo
+        },
+        crosshair: {
+          mode: CrosshairMode.Normal,
+        },
+        grid: {
+          vertLines: {
+            color: '#1f222e'
+          },
+          horzLines: {
+            color: '1f222e'
+          }
+        }
+      });
+
+      candlestickSeriesRef.current = chartRef.current.addCandlestickSeries({
+        upColor: '#26a69a',
+        downColor: '#ef5350',
+        borderVisible: false,
+        wickUpColor: '#26a69a',
+        wickDownColor: '#ef5350',
+        color: "blue"
+      });
+
+      // Handle window resize
+      const handleResize = () => {
+        if (chartRef.current && chartContainerRef.current) {
+          chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
+        }
+      };
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        chartRef.current?.remove();
+      };
+    }
+  }, []);
+
+  useEffect(() => {
+    if (candlestickSeriesRef.current && chartData.length > 0) {
+      const formattedData = chartData.map((d) => ({
+        time: d.time,
+        open: d.open,
+        high: d.high,
+        low: d.low,
+        close: d.close,
+      }));
+      candlestickSeriesRef.current.setData(formattedData);
+      chartRef.current?.timeScale().fitContent();
+    }
+  }, [chartData]);
 
   return (
-    <div
-      style={{
-        position: 'absolute',
-        top: position.y,
-        left: position.x,
-        width: '600px',
-        backgroundColor: '#fff',
-        border: '1px solid #ccc',
-        borderRadius: '8px',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-        zIndex: 1000,
-      }}
-    >
-      {/* Window Header */}
-      <div
-        onMouseDown={handleMouseDown}
-        style={{
-          padding: '10px',
-          backgroundColor: '#0070f3',
-          color: '#fff',
-          cursor: 'move',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderTopLeftRadius: '8px',
-          borderTopRightRadius: '8px',
-        }}
-      >
-        <span>Stock Price Checker</span>
-        <button
-          onClick={() => setShowWindow(false)}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#fff',
-            fontSize: '16px',
-            cursor: 'pointer',
-          }}
-        >
-          &times;
-        </button>
-      </div>
-
-      {/* Window Content */}
-      <div style={{ padding: '20px', textAlign: 'center' }}>
+    <div style={{ textAlign: 'left' }}>
+      <div>
         <input
           type="text"
           value={symbol}
           onChange={(e) => setSymbol(e.target.value.toUpperCase())}
           placeholder="Enter stock symbol"
           style={{
-            padding: '10px',
-            width: '70%',
+            width: '30%',
             marginRight: '10px',
             border: '1px solid #ccc',
             borderRadius: '4px',
@@ -165,7 +121,6 @@ const StockPriceBox = () => {
         <button
           onClick={fetchPrice}
           style={{
-            padding: '10px 15px',
             cursor: 'pointer',
             backgroundColor: '#0070f3',
             color: '#fff',
@@ -175,19 +130,16 @@ const StockPriceBox = () => {
         >
           Get Price
         </button>
-        <div style={{ marginTop: '20px' }}>
-          {price !== null && <p>Current Price: <strong>${price.toFixed(2)}</strong></p>}
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-          <div
-            id="chart-container"
-            style={{
-              width: '100%',
-              height: '400px',
-              marginTop: '20px',
-            }}
-          />
-        </div>
       </div>
+      <div>
+        {price !== null && <p>Current Price: <strong>${price.toFixed(2)}</strong></p>}
+        {error && <p style={{ color: 'red' }}>{error}</p>}
+      </div>
+      <div ref={chartContainerRef} ></div>
+      {/* Attribution Notice */}
+      <p style={{ fontSize: '12px', marginTop: '10px' }}>
+        Charting powered by <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a>.
+      </p>
     </div>
   );
 };

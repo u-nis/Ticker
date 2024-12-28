@@ -1,49 +1,34 @@
 from django.http import JsonResponse
 import yfinance as yf
-import requests
-import json
-import plotly.graph_objects as go
-
+import time
 
 def get_stock_data(request, symbol):
     print(f"Fetching data for symbol: {symbol}")
     try:
         ticker = yf.Ticker(symbol)
-        history = ticker.history(period = "1y")
-        price = ticker.info['currentPrice']
+        history = ticker.history(period="1y")
+        price = ticker.info.get('currentPrice', None)
 
-        history['Date'] = history.index
-        #history['Date'] = history.to_datetime(history['Date'])
+        chart_data = []
+        for date, row in history.iterrows():
+            timestamp = int(time.mktime(date.timetuple()))
+            chart_point = {
+                'open': round(row['Open'], 2),
+                'high': round(row['High'], 2),
+                'low': round(row['Low'], 2),
+                'close': round(row['Close'], 2),
+                'time': timestamp,
+            }
+            chart_data.append(chart_point)
 
-        fig = go.Figure(data=[
-        go.Candlestick(
-            x=history['Date'],
-            open=history['Open'],
-            high=history['High'],
-            low=history['Low'],
-            close=history['Close'],
-            name='Stock Prices',
-            )
-        ])
-
-    # Customize the layout
-        fig.update_layout(
-            title="YTD Chart",
-            xaxis_title="Date",
-            yaxis_title="Price (USD)",
-            template="plotly_white",  # Cool dark theme
-            xaxis_rangeslider_visible=False,  # Hide the range slider for a cleaner look
-        )
-
-        graph_json = fig.to_json()
-
+        # Sort data by time ascending
+        chart_data = sorted(chart_data, key=lambda x: x['time'])
 
         return JsonResponse({
-            'symbol': symbol,
+            'symbol': symbol.upper(),
             'price': price,
-            'graph': graph_json,
+            'chartData': chart_data,
         })
 
     except Exception as e:
-        # Handle errors gracefully and return an error message
         return JsonResponse({'error': str(e)}, status=500)

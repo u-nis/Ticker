@@ -125,6 +125,7 @@ const StockPriceBox = () => {
             }
           }}
           style={{
+            fontSize: '12px',
             marginLeft: '10px',
             marginTop: '10px',
             background: "#141414",

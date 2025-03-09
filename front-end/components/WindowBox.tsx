@@ -16,8 +16,8 @@ const WindowBox = ({ children, onClose }: WindowBoxProps) => {
                 width: 650,
                 height: 500,
             }}
-            minWidth={300}
-            minHeight={200}
+            minWidth={360}
+            minHeight={345}
             bounds="window" // Restricts dragging within the browser window
             dragHandleClassName="window-header" // Draggable only by the header
             style={{
@@ -34,7 +34,7 @@ const WindowBox = ({ children, onClose }: WindowBoxProps) => {
             <div
                 className="window-header bg-primary" // Class to make the header draggable
                 style={{
-                    padding: '5px',
+                    paddingRight: '10px',
                     cursor: 'move', // Indicates draggable area
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -46,7 +46,7 @@ const WindowBox = ({ children, onClose }: WindowBoxProps) => {
                     style={{
                         marginLeft: 'auto',
                         color: '#ffffff',
-                        fontSize: '18px',
+                        fontSize: '20px',
                         background: 'transparent',
                         border: 'none',
                         cursor: 'pointer',

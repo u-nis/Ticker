@@ -50,7 +50,7 @@ const StockPriceBox = () => {
         height: chartContainerRef.current.clientHeight,
         layout: {
           textColor: 'white',
-          background: { type: 'solid', color: '#141414' },
+          background: { color: '#141414' },
           attributionLogo: false, // Disable the TradingView logo
         },
         crosshair: {
@@ -70,7 +70,6 @@ const StockPriceBox = () => {
       candlestickSeriesRef.current = chartRef.current.addCandlestickSeries({
         upColor: '#26a69a',
         downColor: '#ef5350',
-        borderVisible: false,
         wickUpColor: '#26a69a',
         wickDownColor: '#ef5350',
       });
@@ -80,7 +79,7 @@ const StockPriceBox = () => {
 
       // ResizeObserver to handle container size changes
       const resizeObserver = new ResizeObserver((entries) => {
-        for (let entry of entries) {
+        for (const entry of entries) {
           const { width, height } = entry.contentRect;
           chartRef.current?.applyOptions({ width, height });
           chartRef.current?.timeScale().fitContent();
@@ -111,9 +110,10 @@ const StockPriceBox = () => {
   }, [chartData]);
 
   return (
-    <div style={{ width: '100%', height: '100%', }}>
+    <div style={{padding: '10px',width: '100%', height: '100%', }}>
       {/* Input Field */}
-      <div style={{ position: 'fixed', top: '0px' }}>
+      <div style={{display: 'flex',alignItems: 'center',fontSize: '12px',marginLeft: '10px',
+            marginTop: '10px',position: 'absolute',top: '0',}}>
         <input
           type="text"
           value={symbol}
@@ -125,26 +125,24 @@ const StockPriceBox = () => {
             }
           }}
           style={{
-            fontSize: '12px',
-            marginLeft: '10px',
-            marginTop: '10px',
             background: "#141414",
             color: "white",
-            width: '60px',
+            width: '40px',
           }}
         />
-      </div>
-
-      {/* Price and Error Messages */}
-      <div style={{ padding: '10px' }}>
-        {price !== null && <p>Current Price: <strong>${price.toFixed(2)}</strong></p>}
+        {/* Price and Error Messages */}
+      <div>
+        {price !== null && <p style={{marginLeft: '5px'}}>${price.toFixed(2)}</p>}
         {error && <p style={{ color: 'red' }}>{error}</p>}
       </div>
+      </div>
+
+      
 
       {/* Chart Container */}
       <div
         ref={chartContainerRef}
-        style={{ width: '100%', height: 'calc(100% - 60px)', position: 'absolute', top: '60px' }}
+        style={{ width: '100%', height: '100%'  }}
       ></div>
     </div >
   );
